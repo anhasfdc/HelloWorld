@@ -1,0 +1,491 @@
+<aura:component controller="testPackage1122.caseMergeController"
+                implements="force:lightningQuickAction,force:hasRecordId" access="global">
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <!--Attributes-->
+    <aura:attribute name="OriginalCase" type="Case"/>
+    <aura:attribute name="SubjectCriteria" type="String[]" default="Contains,Equals"/>
+    <aura:attribute name="CaseOrigin" type="String[]" default=""/>
+    <aura:attribute name="CaseStatus" type="String[]" default=""/>
+    <aura:attribute name="CasePriority" type="String[]" default=""/>
+    <aura:attribute name="NumberOfCases" type="String[]" default="2,3,4,5,6,7,8,9,10"/>
+    <aura:attribute name="RelatedList" type="String[]" default=""/>
+    <aura:attribute name="selectedRLists" type="String[]" default=""/>
+    <aura:attribute name="DuplicateCaseList"
+                    type="testPackage1122.commonWrapperClass[]"/>
+    <aura:attribute name="SelectedCaseList"
+                    type="testPackage1122.commonWrapperClass[]"/>
+    <aura:attribute name="CaseListForMaster"
+                    type="testPackage1122.commonWrapperClass[]"/>
+    <aura:attribute name="isProcessing" type="Boolean" description="Show spinner if processing." />
+    <aura:attribute name="showErrorMessage" type="String" />
+    <aura:attribute name="showSuccessMessage" type="String" />
+	<aura:attribute name="hasErrors" type="Boolean" description="Indication for errors" />
+    <aura:attribute name="createdDateFrom" type="Date" default=""/>
+    <aura:attribute name="createdDateTo" type="Date" default=""/>
+    <aura:attribute name="IsFindDupClicked" type="Boolean"/>
+    <aura:attribute name="sizeOfDuplicateList" type="Integer"/>
+    <aura:attribute name="IdForMasterCase" type="String"/>
+    <aura:attribute name="isMergedButtonClickedwithSuccess" type="Boolean" default="False"/>
+    <!--END Attributes-->
+    
+    <!--Show Error Messages-->
+    <aura:if isTrue="{!v.hasErrors}">
+        <div class="recordSaveError">
+            <ui:message title="Error" severity="error" closable="false">
+                Error: <br/><br/>
+                <ui:outputText value="{!v.showErrorMessage}" />
+            </ui:message>
+        </div>
+    </aura:if>    
+    <!--END Show Error Messages-->
+    
+    <!--Show Success Message-->
+    
+    
+    <!--END Show Success Message-->
+    
+    <!--Show Spinner Section-->
+    <aura:if isTrue="{!v.isProcessing}">
+        <div class="slds-spinner_container">
+        	<div class="slds-spinner slds-spinner--medium slds-spinner--brand" role="alert">
+            	<span class="slds-assistive-text">Loading</span>
+            	<div class="slds-spinner__dot-a"></div>
+            	<div class="slds-spinner__dot-b"></div>
+          	</div>
+	   	</div>
+   	</aura:if>
+    <!--END Show Spinner Section-->
+    
+    <!--Component Which Is Visible-->
+    <aura:if isTrue="{!!v.isMergedButtonClickedwithSuccess}">
+    
+    <!-- Set Filter Criteria -->
+    
+    <div id='Div_FilterCriteria'>
+        
+        <!-- Display Header -->
+    	<div class="slds-page-header" role="banner">
+        	<h1 class="slds-page-header__title slds-m-right--small
+            	slds-truncate slds-align-left">Select Filter Criteria</h1> 
+    	</div>
+        <!-- END Display Header -->
+        
+        <br></br>
+        <!-- Primary Filter Criteria -->
+        <div class="slds-text-heading--medium">Primary Filter*</div>
+        <br></br>
+        <div class="slds-form--inline">
+            <div class="slds-form-element">
+    			<label class="slds-form-element__label" for="Subject_Input">Subject</label>
+                <div class="slds-form-element__control">
+                    <ui:inputSelect aura:id="SubCriteria" change="{!c.onSubCriteriaChange}">
+		            	<aura:iteration items="{!v.SubjectCriteria}" var="Sub">
+             				<ui:inputSelectOption text="{!Sub}" label="{!Sub}"/>
+        				</aura:iteration>
+    				</ui:inputSelect>
+                </div>&nbsp;
+                <div class="slds-form-element__control">
+      				<ui:inputText aura:id="Subject_Input" class="slds-input"
+                                  value="{!v.OriginalCase.Subject}" required="true"/>
+		    	</div>
+  			</div>            
+        </div>
+        <!-- END Primary Filter Criteria -->
+        
+        <br></br>
+        
+        <!-- Secondary Filter Criteria -->
+        
+        <div class="slds-text-heading--medium">Secondary Filters (Optional)</div>
+        <br></br>
+        <div class="slds-form--inline">
+            
+            <div class="slds-form-element">
+    			<label class="slds-form-element__label" for="Status_Input">Status</label>
+                <div class="slds-form-element__control">
+      				<ui:inputSelect aura:id="Case_Status" change="{!c.onStatusChange}">
+        				<aura:iteration items="{!v.CaseStatus}" var="c_Status">
+             				<ui:inputSelectOption text="{!c_Status}" label="{!c_Status}"/>
+        				</aura:iteration>
+    				</ui:inputSelect>
+		    	</div>
+  			</div>
+            <div class="slds-form-element">
+    			<label class="slds-form-element__label" for="Origin_Input">Origin</label>
+                <div class="slds-form-element__control">
+                    <ui:inputSelect aura:id="Case_Origin" change="{!c.onOriginChange}">
+        				<aura:iteration items="{!v.CaseOrigin}" var="c_Origin">
+             				<ui:inputSelectOption text="{!c_Origin}" label="{!c_Origin}"/>
+        				</aura:iteration>
+    				</ui:inputSelect>
+		    	</div>
+  			</div>
+       		<div class="slds-form-element">
+    			<label class="slds-form-element__label" for="Priority_Input">Priority</label>
+				<div class="slds-form-element__control">
+                    <ui:inputSelect aura:id="Case_Priority" change="{!c.onPriorityChange}">
+        				<aura:iteration items="{!v.CasePriority}" var="c_Priority">
+             				<ui:inputSelectOption text="{!c_Priority}" label="{!c_Priority}"/>
+        				</aura:iteration>
+    				</ui:inputSelect>
+		    	</div>
+  			</div>
+            
+        </div>
+        
+        <br></br>
+        <!--For Date Selection-->
+        <div class="slds-form--inline">
+            <label class="slds-form-element__label">Created Date</label>
+        	<br></br>
+            <div class="slds-form-element">
+    			<label class="slds-form-element__label" 
+                       for="createdDate">From: </label>
+				<div class="slds-form-element__control">
+                    <ui:inputDate aura:id="createdDateFrom" class="form-control" 
+                                  value="{!v.createdDateFrom}" displayDatePicker="true"/>
+                </div>
+			</div>
+            <div class="slds-form-element">
+    			<label class="slds-form-element__label" 
+                       for="createdDate">To: </label>
+				<div class="slds-form-element__control">
+                    <ui:inputDate aura:id="createdDateTo" class="form-control" 
+                                      value="{!v.createdDateTo}" displayDatePicker="true"/>
+                </div>
+			</div>
+        </div>
+        <!--END For Date Selection-->
+        
+        <br></br>
+        <!--For Number of Cases to be shown-->
+        <div class="slds-form--inline">
+        	<div class="slds-form-element">
+    			<label class="slds-form-element__label" for="CasesNum">No. Of Cases</label>
+				<div class="slds-form-element__control">
+	            	<ui:inputSelect aura:id="Number_Of_Cases" change="{!c.onNumberOfCasesChange}">
+       					<aura:iteration items="{!v.NumberOfCases}" var="c_Num">
+           					<ui:inputSelectOption text="{!c_Num}" label="{!c_Num}"/>
+       					</aura:iteration>
+   					</ui:inputSelect>
+	    		</div>
+			</div>
+        </div>
+        <!--END For Number of Cases to be shown-->
+        
+        <!-- END Secondary Filter Criteria -->
+        
+        <br></br>
+    	<div class="slds-form-element">
+    		<ui:button press="{!c.findDuplicatesButtonFunction}" label="Find Duplicates"
+                       class="slds-button slds-button--brand"/>
+  		</div>
+        
+    </div>
+    <!-- END Set Filter Criteria -->    
+    
+    <br></br>
+    <!--For Shown Number of Cases-->
+    <aura:if isTrue="{!v.IsFindDupClicked}">
+        <label class="slds-form-element__label">Duplicate Cases Shown: </label>
+        <ui:outputText value="{!v.sizeOfDuplicateList}"/>
+    </aura:if>
+    <!--END For Shown Number of Cases-->
+    
+    <br></br>
+    <!--Table for Duplicate Cases-->
+    
+    <aura:if isTrue="{!!empty(v.DuplicateCaseList)}">
+    
+        <div class="slds-page-header" role="banner">
+        	<h2 class="slds-page-header__title slds-m-right--small
+           		slds-truncate slds-align-left">Select Cases to Merge</h2> 
+    	</div>
+        
+        <div id="DuplicateCaseList" class="slds-scrollable--x">
+        
+        	<table class="slds-table
+                          slds-table--bordered
+                          slds-table--cell-buffer
+                          slds-table--striped">
+            	<thead>
+                	<tr class="slds-text-title--caps">
+                    	<th scope="col">
+        					<div class="slds-truncate" title="Select"></div>
+      					</th>
+                        <th scope="col">
+        					<div class="slds-truncate" title="Number">Case Number</div>
+      					</th>
+                        <th scope="col">
+	        				<div class="slds-truncate" title="Subject">Subject</div>
+    	  				</th>
+        	            <th scope="col">
+        					<div class="slds-truncate" title="CreatedDate">Created Date</div>
+      					</th>
+                    	<th scope="col">
+        					<div class="slds-truncate" title="Status">Status</div>
+	      				</th>
+                        <th scope="col">
+        					<div class="slds-truncate" title="owner">Owner</div>
+      					</th>
+                        <th scope="col">
+        					<div class="slds-truncate" title="contact">Contact</div>
+      					</th>
+                        <th scope="col">
+        					<div class="slds-truncate" title="Account">Account</div>
+      					</th>
+                	    <th scope="col">
+        					<div class="slds-truncate" title="Priority">Priority</div>
+	      				</th>
+    	                <th scope="col">
+        					<div class="slds-truncate" title="Origin">Origin</div>
+      					</th>
+    	            </tr>
+        	    </thead>
+            	<tbody>
+                	<aura:iteration items="{!v.DuplicateCaseList}" var="c_List">
+                		<tr>
+	                        <th scope="row" data-table="Select">
+    	    					<div class="slds-truncate">
+        	                        <ui:inputCheckbox value="{!c_List.wIsSelected}"/>
+            	                </div>
+      						</th>
+                            <th scope="row" data-label="Number">
+        						<div class="slds-truncate">
+                                    <a href="{!'/one/one.app?#/sObject/' + c_List.wId + '/view'}" 
+                                       target="_blank">
+                                        <ui:outputText value="{!c_List.wNumber}"/>
+                                    </a>                            	    
+                            	</div>
+	      					</th>
+                    	    <th scope="row" data-label="Subject">
+        						<div class="slds-truncate">
+                            	    <ui:outputText value="{!c_List.wSubject}"/>
+                            	</div>
+	      					</th>
+    	                    <th scope="row" data-label="Created Date">
+        						<div class="slds-truncate">
+            	                    <ui:outputText value="{!c_List.wCreatedDate}"/>
+                	            </div>
+      						</th>
+                        	<th scope="row" data-label="Status">
+        						<div class="slds-truncate">
+                                	<ui:outputText value="{!c_List.wStatus}"/>
+	                            </div>
+    	  					</th>
+                            <th scope="row" data-label="Owner">
+        						<div class="slds-truncate">
+                                    <a href="{!'/one/one.app?#/sObject/' + c_List.wOwnerId + '/view'}" 
+                                       target="_blank">
+                            	    	<ui:outputText value="{!c_List.wOwnerName}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                            <th scope="row" data-label="Contact">
+        						<div class="slds-truncate">
+                            	    <a href="{!'/one/one.app?#/sObject/' + c_List.wContactId + '/view'}" 
+                                       target="_blank">
+                                    	<ui:outputText value="{!c_List.wContactName}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                            <th scope="row" data-label="Account">
+        						<div class="slds-truncate">
+                                    <a href="{!'/one/one.app?#/sObject/' + c_List.wAccountId + '/view'}" 
+                                       target="_blank">
+                            	    	<ui:outputText value="{!c_List.wAccountName}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                        	<th scope="row" data-label="Priority">
+	        					<div class="slds-truncate">
+    	                            <ui:outputText value="{!c_List.wPriority}"/>
+        	                    </div>
+      						</th>
+        	                <th scope="row" data-label="Origin">
+        						<div class="slds-truncate">
+                	                <ui:outputText value="{!c_List.wOrigin}"/>
+                    	        </div>
+      						</th>
+                	    </tr>
+                	</aura:iteration>
+            	</tbody>
+        	</table>
+        
+    	</div>
+        
+        <br></br>
+    	<div class="slds-form-element">
+    		<ui:button press="{!c.nextButtonFunction}" label="Next"/>
+  		</div>
+        
+    </aura:if>
+    <!--END Table for Duplicate Cases-->
+    
+    <br></br>
+    <!--Select Related Lists-->
+    <!--<aura:if isTrue="{!!empty(v.SelectedCaseList)}">
+        
+        <div class="slds-page-header" role="banner">
+        	<h2 class="slds-page-header__title slds-m-right@@small
+           		slds-truncate slds-align-left">Select Related Lists to Merge</h2> 
+    	</div>
+        
+    	<label class="slds-form-element__label" for="RList">Related Lists</label>
+		<ui:inputSelect aura:id="RList" multiple="true" class="multiple RList123"
+                        change="{!c.onRelatedListChange}">
+       		<aura:iteration items="{!v.RelatedList}" var="c_RList">
+           		<ui:inputSelectOption text="{!c_RList}" label="{!c_RList}"/>
+       		</aura:iteration>
+   		</ui:inputSelect>
+        
+        <br></br>
+        <aura:if isTrue="{!!empty(v.selectedRLists)}">
+            <h3>Selected Related Lists:</h3>
+            <p><ui:outputText class="result" aura:id="showSelectedRLists" value="" /></p>
+        </aura:if>
+		    	
+        
+        
+    </aura:if>-->
+    <!--END Select Related Lists-->
+    
+    
+    <br></br>
+    <!--Table for Selected Cases-->
+    
+    <aura:if isTrue="{!!empty(v.SelectedCaseList)}">
+    
+        <div class="slds-page-header" role="banner">
+        	<h2 class="slds-page-header__title slds-m-right--small
+           		slds-truncate slds-align-left">Select Master Case</h2> 
+    	</div>
+        
+        <div id="SelectedCaseList" class="slds-scrollable--x">
+        	<table class="slds-table
+                          slds-table--bordered
+                          slds-table--cell-buffer
+                          slds-table--striped">
+                <thead>
+                	<tr class="slds-text-title--caps">
+                    	<th scope="col">
+        					<div class="slds-truncate" title="Select"></div>
+      					</th>
+                        <th scope="col">
+	        				<div class="slds-truncate" title="CNumber">Case Number</div>
+    	  				</th>
+                    	<th scope="col">
+	        				<div class="slds-truncate" title="Subject">Subject</div>
+    	  				</th>
+        	            <th scope="col">
+        					<div class="slds-truncate" title="CreatedDate">Created Date</div>
+      					</th>
+                    	<th scope="col">
+        					<div class="slds-truncate" title="Status">Status</div>
+	      				</th>
+                        <th scope="col">
+	        				<div class="slds-truncate" title="Owner">Owner</div>
+    	  				</th>
+                        <th scope="col">
+	        				<div class="slds-truncate" title="Contact">Contact</div>
+    	  				</th>
+                        <th scope="col">
+	        				<div class="slds-truncate" title="Account">Account</div>
+    	  				</th>
+                	    <th scope="col">
+        					<div class="slds-truncate" title="Priority">Priority</div>
+	      				</th>
+    	                <th scope="col">
+        					<div class="slds-truncate" title="Origin">Origin</div>
+      					</th>
+    	            </tr>
+        	    </thead>
+                <tbody>
+                	<aura:iteration items="{!v.SelectedCaseList}" var="c_List">
+                		<tr>
+	                        <th scope="row" data-table="Select">
+    	    					<div class="slds-truncate">
+        	                        <ui:inputRadio aura:id="{MasterRadioButton}"
+                                                   name="radioSelectedCases"
+                                                   text="{!c_List.wId}"
+                                                   value="{!c_List.wIsSelected}"
+                                                   change="{!c.onMasterRadioChange}"/>
+            	                </div>
+      						</th>
+                            <th scope="row" data-label="Number">
+        						<div class="slds-truncate">
+                                    <a href="{!'/one/one.app?#/sObject/' + c_List.wId + '/view'}" 
+                                       target="_blank">
+                            	    	<ui:outputText value="{!c_List.wNumber}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                    	    <th scope="row" data-label="Subject">
+        						<div class="slds-truncate">
+                            	    <ui:outputText value="{!c_List.wSubject}"/>
+                            	</div>
+	      					</th>
+    	                    <th scope="row" data-label="Created Date">
+        						<div class="slds-truncate">
+            	                    <ui:outputText value="{!c_List.wCreatedDate}"/>
+                	            </div>
+      						</th>
+                        	<th scope="row" data-label="Status">
+        						<div class="slds-truncate">
+                                	<ui:outputText value="{!c_List.wStatus}"/>
+	                            </div>
+    	  					</th>
+                            <th scope="row" data-label="Owner">
+        						<div class="slds-truncate">
+                                    <a href="{!'/one/one.app?#/sObject/' + c_List.wOwnerId + '/view'}" 
+                                       target="_blank">
+                            	    	<ui:outputText value="{!c_List.wOwnerName}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                            <th scope="row" data-label="Contact">
+        						<div class="slds-truncate">
+                            	    <a href="{!'/one/one.app?#/sObject/' + c_List.wContactId + '/view'}" 
+                                       target="_blank">
+                                    	<ui:outputText value="{!c_List.wContactName}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                            <th scope="row" data-label="Account">
+        						<div class="slds-truncate">
+                                    <a href="{!'/one/one.app?#/sObject/' + c_List.wAccountId + '/view'}" 
+                                       target="_blank">
+                            	    	<ui:outputText value="{!c_List.wAccountName}"/>
+                                    </a>
+                            	</div>
+	      					</th>
+                        	<th scope="row" data-label="Priority">
+	        					<div class="slds-truncate">
+    	                            <ui:outputText value="{!c_List.wPriority}"/>
+        	                    </div>
+      						</th>
+        	                <th scope="row" data-label="Origin">
+        						<div class="slds-truncate">
+                	                <ui:outputText value="{!c_List.wOrigin}"/>
+                    	        </div>
+      						</th>
+                	    </tr>
+                	</aura:iteration>
+            	</tbody>
+            </table>
+        </div>
+        
+        <br></br>
+    	<div class="slds-form-element">
+    		<ui:button press="{!c.mergeButtonFunction}" label="Merge"/>
+  		</div>
+        
+    </aura:if>
+    <!--END Table for Selected Cases-->
+        
+    </aura:if>
+    <!--END Component Which Is Visible-->    
+    
+</aura:component>
